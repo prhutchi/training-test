@@ -4,6 +4,7 @@ author: "Patrick Hutchins"
 date: "May 21, 2018"
 output: 
   html_document: 
+    df_print: tibble
     highlight: pygments
     theme: paper
     toc: yes
@@ -69,8 +70,6 @@ Get some data from a url.
 
 ```{r Download_Some_Data}
 catch_df <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.302.1", method = "libcurl"), stringsAsFactors = FALSE)
-
-head(catch_df)
 ```
 
 
@@ -80,19 +79,102 @@ Use this to identify unique values in a column.
 unique(catch_df$notesRegCode)
 ```
 
+
 This will select certain columns using the pipe operatore. Use ctrl+shft+M to hotkey a pipe "%>%".
 
 ```{r Select_Columns}
-catch_df %>% 
-  select(Region, Year, Chinook, Sockeye, Coho, Pink, Chum) %>% 
-  head()
+catch_df <- catch_df %>% 
+  select(Region, Year, Chinook, Sockeye, Coho, Pink, Chum)
 ```
+
 
 You can also accomplish the same thing by using negative arguments.
 
-```{r Negative_Select_Columns}
-catch_df %>% 
-  select(-All, -notesRegCode) %>% 
-  head()
+
+catch_df <- catch_df %>% 
+  select(-All, -notesRegCode)
+
+
+
+The first step of convertin wide format data to long format data is to gather. Keys are column names, values are elongated accross other variables.
+
+```{r Gather}
+catch_df <- catch_df %>% 
+  gather(key = species, value = catch, -Region, -Year)
 ```
 
+
+If we need to move back to wide format data we use the spread function.
+
+
+catch_df %>% 
+  spread(key = species, value = catch)
+
+
+
+To rename a column.
+
+```{r Rename}
+catch_df <- catch_df %>% 
+  rename(catch_thousands = catch)
+```
+
+Create a new column that computes the number of individual fish, rather than thousands of fish. First we have to make sure that the columns that we want to mutate are numeric if we are using numeric opperations.
+```{r Find_NA}
+test <-as.integer(catch_df$catch_thousands)
+
+which(is.na(test)==TRUE)
+
+```
+
+```{r Mutate}
+catch_df <- catch_df %>% 
+ mutate(catch_thousands = ifelse(catch_thousands =="I", 1, catch_thousands)) %>% 
+ mutate(catch_thousands = as.integer(catch_thousands)) %>% 
+ mutate(catch =catch_thousands *1000)
+
+```
+
+
+#Analysis
+
+Summarize means by species x year and display the number of observations for each species/year combination.
+```{r}
+catch_df %>% 
+  group_by(species, Year) %>% 
+  summarize(mean_catch = mean(catch), num_obs = n())
+```
+
+Filter for only Chinook, then group by region
+```{r}
+catch_df %>% 
+  filter(species =="Chinook") %>% 
+  group_by(Region) %>% 
+  summarise(mean_catch=mean(catch))
+```
+
+##Joins
+
+Get Data from a url.
+
+```{r Get_Data}
+region_defs <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.303.1", method = "libcurl"),
+                       stringsAsFactors = FALSE)
+
+```
+ 
+
+Select columns to the exclusion of ones that we don't want and rename those columns to something more compatible in joining with our previous table.
+
+```{r Select_Rename}
+region_defs <- region_defs %>% 
+  select(code, mgmtArea) %>%
+  rename(Region = code, Region_Name  = mgmtArea)
+```
+
+
+Join the two tables based on the region code
+
+```{r}
+catch_joined <- left_join(catch_df, region_defs)
+```
