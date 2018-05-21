@@ -1,0 +1,98 @@
+---
+title: "WDAFS Test RMarkdown"
+author: "Patrick Hutchins"
+date: "May 21, 2018"
+output: 
+  html_document: 
+    highlight: pygments
+    theme: paper
+    toc: yes
+    toc_depth: 6
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(DT)
+library(ggplot2)
+```
+
+
+**Bold Text**
+
+[link](linkurl.com)
+
+![](Images/PKX_Detection.jpg)
+
+
+I want to insert some code into my writing `hereis <- my code`
+
+```{r,fig.height=6, fig.align='center'}
+plot(1:10)
+```
+
+
+```{r Datatable}
+data(mpg)
+DT::datatable(mpg, caption="Mileage")
+```
+
+
+##Data Organization
+
+Get some data from a url.
+
+```{r Download_Some_Data}
+catch_df <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.302.1", method = "libcurl"), stringsAsFactors = FALSE)
+
+head(catch_df)
+```
+
+
+Use this to identify unique values in a column.
+
+```{r}
+unique(catch_df$notesRegCode)
+```
+
+This will select certain columns using the pipe operatore. Use ctrl+shft+M to hotkey a pipe "%>%".
+
+```{r Select_Columns}
+catch_df %>% 
+  select(Region, Year, Chinook, Sockeye, Coho, Pink, Chum) %>% 
+  head()
+```
+
+You can also accomplish the same thing by using negative arguments.
+
+```{r Negative_Select_Columns}
+catch_df %>% 
+  select(-All, -notesRegCode) %>% 
+  head()
+```
+
